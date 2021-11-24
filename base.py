@@ -60,7 +60,7 @@ class BotManager:
         if self.use_chrome:
             browser = self.playwright.chromium.launch_persistent_context(
                 headless=False,
-                proxy=self.proxy_data,
+                # proxy=self.proxy_data,
                 accept_downloads=True,
                 user_data_dir=os.getcwd() + "/user_tmp",
                 args=[

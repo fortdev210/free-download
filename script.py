@@ -42,7 +42,8 @@ class Downloader(BotManager):
     def get_search_results(self):
         ## article link https://link.springer.com/search?date-facet-mode=between&facet-start-year=2019&facet-content-type=%22Article%22&facet-discipline=%22Materials+Science%22&facet-end-year=2022
         # self.wait_element_loading('[id="results-list"]')
-        results = []
+        link_results = []
+        title_results = []
         for page_number in self.page_range:
             search_link = ARTICLE_LINK.format(
                 page=page_number,
@@ -55,28 +56,35 @@ class Downloader(BotManager):
             self.open_new_page()
             self.go_to_link(search_link)
             self.wait_element_loading('[id="results-list"]')
-
+          
             content = """() => {
                 let links = []
+                let titles = []
                 const lists = document.querySelector('[id="results-list"]').querySelectorAll('li')
                 for (let i=0; i<lists.length; i ++) {
                     list = lists[i]
                     anchor = list.querySelector('a').href
+                    title = list.querySelector('a').innerText
                     links.push(anchor)
+                    titles.push(title)
                 }
-                return links
+                return [links, titles]
             }
             """
             page_results = self.page.evaluate(content)
-            print("pagenumber", page_number, len(page_results))
-            results = results + page_results
+            link_results = link_results + page_results[0]
+            title_results = title_results + page_results[1]
             self.page.close()
-        return results
+        return [link_results, title_results]
 
-    def download_pdfs(self, anchor_list):
+    def download_pdfs(self, results):
         success_number = 0
+        anchor_list = results[0]
+        title_list = results[1]
         
-        for anchor in anchor_list:
+        for i in range(len(anchor_list)):
+            anchor = anchor_list[i]
+            title = title_list[i]
             try:
                 self.open_new_page()
                 self.go_to_link(anchor)
@@ -105,8 +113,9 @@ class Downloader(BotManager):
                     """
                     self.page.evaluate(content)
                 download = download_info.value
-                download.save_as(download.suggested_filename)
-                os.replace(download.suggested_filename, self.discipline + "/" + self.query + "/" + download.suggested_filename)
+                filename = title + '.pdf'
+                download.save_as(filename)
+                os.replace(os.path.join(os.getcwd(), filename),self.discipline + "/" + self.query + "/" + filename)
                 self.page.close()
                 success_number = success_number + 1
             except Exception as e:
