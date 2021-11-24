@@ -1,4 +1,5 @@
 import click
+import os
 
 from base import BotManager
 from settings import SPRINGER_LINK, SCI_HUB_LINK, ARTICLE_LINK
@@ -72,6 +73,7 @@ class Downloader(BotManager):
         return results
 
     def download_pdfs(self, anchor_list):
+        success_number = 0
         for anchor in anchor_list:
             try:
                 self.open_new_page()
@@ -86,7 +88,6 @@ class Downloader(BotManager):
                     }
                 """
                 doi = self.page.evaluate(content)
-                print(doi)
                 self.go_to_link(SCI_HUB_LINK)
                 self.wait_element_loading('[type="textbox"]')
                 self.insert_value('[type="textbox"]', doi)
@@ -102,14 +103,14 @@ class Downloader(BotManager):
                     """
                     self.page.evaluate(content)
                 download = download_info.value
-                path = download.path()
-                print(path)
                 download.save_as(download.suggested_filename)
-                self.sleep(10)
+                os.replace(download.suggested_filename, self.discipline + "/" + self.query + "/" + download.suggested_filename)
                 self.page.close()
+                success_number = success_number + 1
             except Exception as e:
                 print("error", e)
                 self.page.close()
+        print(f"Total {len(anchor_list)}, success: {success_number}")
 
     def run(self):
         self.open_springer()
@@ -150,6 +151,11 @@ class Downloader(BotManager):
     "--query", default="catalyst", help="Query to download", prompt="Insert query"
 )
 def main(start, end, start_page, end_page, query, discipline):
+    try:
+        os.makedirs(discipline + '/' + query)
+    except:
+        pass
+
     bot = Downloader(
         start=start,
         end=end,
