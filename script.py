@@ -11,6 +11,7 @@ class Downloader(BotManager):
         self.start = kwargs.get("start")
         self.end = kwargs.get("end")
         self.page_number = kwargs.get("page")
+        self.page_range = kwargs.get("page_range")
         self.query = kwargs.get("search_key")
         self.discipline = kwargs.get("discipline")
 
@@ -40,32 +41,34 @@ class Downloader(BotManager):
     def get_search_results(self):
         ## article link https://link.springer.com/search?date-facet-mode=between&facet-start-year=2019&facet-content-type=%22Article%22&facet-discipline=%22Materials+Science%22&facet-end-year=2022
         # self.wait_element_loading('[id="results-list"]')
+        results = []
+        for page_number in self.page_range:
+            search_link = ARTICLE_LINK.format(
+                page=page_number,
+                start=self.start,
+                end=self.end,
+                query=self.query,
+                discipline=self.discipline,
+            )
 
-        search_link = ARTICLE_LINK.format(
-            page=self.page_number,
-            start=self.start,
-            end=self.end,
-            query=self.query,
-            discipline=self.discipline,
-        )
+            self.open_new_page()
+            self.go_to_link(search_link)
+            self.wait_element_loading('[id="results-list"]')
 
-        self.open_new_page()
-        self.go_to_link(search_link)
-        self.wait_element_loading('[id="results-list"]')
-
-        content = """() => {
-            let links = []
-            const lists = document.querySelector('[id="results-list"]').querySelectorAll('li')
-            for (let i=0; i<lists.length; i ++) {
-                list = lists[i]
-                anchor = list.querySelector('a').href
-                links.push(anchor)
+            content = """() => {
+                let links = []
+                const lists = document.querySelector('[id="results-list"]').querySelectorAll('li')
+                for (let i=0; i<lists.length; i ++) {
+                    list = lists[i]
+                    anchor = list.querySelector('a').href
+                    links.push(anchor)
+                }
+                return links
             }
-            return links
-        }
-        """
-        results = self.page.evaluate(content)
-        self.page.close()
+            """
+            page_results = self.page.evaluate(content)
+            results = results + page_results
+            self.page.close()
         return results
 
     def download_pdfs(self, anchor_list):
@@ -112,7 +115,7 @@ class Downloader(BotManager):
         self.open_springer()
         results = self.get_search_results()
         self.download_pdfs(results)
-        print(results)
+        print("Finished downloading.")
 
 
 @click.command()
@@ -126,28 +129,34 @@ class Downloader(BotManager):
     "--end", default=2022, help="End Year.", prompt="Input end year, default is 2022."
 )
 @click.option(
-    "--page",
+    "--start_page",
     default=1,
-    help="Page to download",
+    help="Start page to download",
     prompt="Input page number, default is 1.",
 )
 @click.option(
+    "--end_page",
+    default=3,
+    help="End page to download",
+    prompt="Input page number, default is 3.",
+)
+@click.option(
     "--discipline",
-    default="Environment",
+    default="Chemistry",
     prompt="Input discipline, default is Environment",
     help="https://link.springer.com/search?date-facet-mode=between&query=recycling&facet-end-year=%7Bend_year%7D&facet-language=%22En%22&facet-start-year=%7Bstart_year%7D",
 )
 @click.option(
-    "--query", default="recycling", help="Query to download", prompt="Insert query"
+    "--query", default="catalyst", help="Query to download", prompt="Insert query"
 )
-def main(start, end, page, query, discipline):
+def main(start, end, start_page, end_page, query, discipline):
     bot = Downloader(
         start=start,
         end=end,
         use_chrome=False,
-        page=page,
+        page_range=[start_page, end_page],
         search_key=query,
-        discipline=discipline,
+        discipline='+'.join(discipline.split(' ')),
     )
     bot.run()
 
