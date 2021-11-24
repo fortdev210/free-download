@@ -68,12 +68,14 @@ class Downloader(BotManager):
             }
             """
             page_results = self.page.evaluate(content)
+            print("pagenumber", page_number, len(page_results))
             results = results + page_results
             self.page.close()
         return results
 
     def download_pdfs(self, anchor_list):
         success_number = 0
+        
         for anchor in anchor_list:
             try:
                 self.open_new_page()
@@ -133,13 +135,13 @@ class Downloader(BotManager):
     "--start_page",
     default=1,
     help="Start page to download",
-    prompt="Input page number, default is 1.",
+    prompt="Input start page number, default is 1.",
 )
 @click.option(
     "--end_page",
     default=3,
     help="End page to download",
-    prompt="Input page number, default is 3.",
+    prompt="Input end page number, default is 3.",
 )
 @click.option(
     "--discipline",
@@ -160,7 +162,7 @@ def main(start, end, start_page, end_page, query, discipline):
         start=start,
         end=end,
         use_chrome=False,
-        page_range=[start_page, end_page],
+        page_range=range(start_page, end_page),
         search_key=query,
         discipline='+'.join(discipline.split(' ')),
     )
