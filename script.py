@@ -51,7 +51,7 @@ class Downloader(BotManager):
                 start=self.start,
                 end=self.end,
                 query=self.query,
-                discipline=self.discipline,
+                discipline='+'.join(self.discipline.split(' '))
             )
 
             self.open_new_page()
@@ -181,7 +181,7 @@ def main(start, end, start_page, end_page, query, discipline):
         use_chrome=False,
         page_range=range(start_page, end_page),
         search_key=query,
-        discipline='+'.join(discipline.split(' ')),
+        discipline=discipline,
     )
     bot.run()
 
