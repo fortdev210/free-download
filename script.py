@@ -1,5 +1,6 @@
 import click
 import os
+import re
 
 from base import BotManager
 from settings import SPRINGER_LINK, SCI_HUB_LINK, ARTICLE_LINK
@@ -71,10 +72,13 @@ class Downloader(BotManager):
                 return [links, titles]
             }
             """
-            page_results = self.page.evaluate(content)
-            link_results = link_results + page_results[0]
-            title_results = title_results + page_results[1]
-            self.page.close()
+            try:
+                page_results = self.page.evaluate(content)
+                link_results = link_results + page_results[0]
+                title_results = title_results + page_results[1]
+                self.page.close()
+            except Exception as e:
+                return None
         return [link_results, title_results]
 
     def download_pdfs(self, results):
@@ -113,6 +117,7 @@ class Downloader(BotManager):
                     """
                     self.page.evaluate(content)
                 download = download_info.value
+                title = re.sub('[^A-Za-z0-9]+',' ', title)
                 filename = title + '.pdf'
                 download.save_as(filename)
                 os.replace(os.path.join(os.getcwd(), filename),self.discipline + "/" + self.query + "/" + filename)
@@ -126,8 +131,11 @@ class Downloader(BotManager):
     def run(self):
         self.open_springer()
         results = self.get_search_results()
-        self.download_pdfs(results)
-        print("Finished downloading.")
+        if results is not None:
+            self.download_pdfs(results)
+            print("Finished downloading.")
+        else:
+            print("No search results. Just change query or discipline.")
 
 
 @click.command()
