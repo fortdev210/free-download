@@ -56,29 +56,28 @@ class Downloader(BotManager):
 
             self.open_new_page()
             self.go_to_link(search_link)
-            self.wait_element_loading('[id="results-list"]')
-          
-            content = """() => {
-                let links = []
-                let titles = []
-                const lists = document.querySelector('[id="results-list"]').querySelectorAll('li')
-                for (let i=0; i<lists.length; i ++) {
-                    list = lists[i]
-                    anchor = list.querySelector('a').href
-                    title = list.querySelector('a').innerText
-                    links.push(anchor)
-                    titles.push(title)
-                }
-                return [links, titles]
-            }
-            """
             try:
+                self.wait_element_loading('[id="results-list"]')
+                content = """() => {
+                    let links = []
+                    let titles = []
+                    const lists = document.querySelector('[id="results-list"]').querySelectorAll('li')
+                    for (let i=0; i<lists.length; i ++) {
+                        list = lists[i]
+                        anchor = list.querySelector('a').href
+                        title = list.querySelector('a').innerText
+                        links.push(anchor)
+                        titles.push(title)
+                    }
+                    return [links, titles]
+                }
+                """
                 page_results = self.page.evaluate(content)
                 link_results = link_results + page_results[0]
                 title_results = title_results + page_results[1]
                 self.page.close()
             except Exception as e:
-                return None
+                self.page.close()
         return [link_results, title_results]
 
     def download_pdfs(self, results):
@@ -131,7 +130,9 @@ class Downloader(BotManager):
     def run(self):
         self.open_springer()
         results = self.get_search_results()
-        if results is not None:
+        if len(results[0]):
+            total = len(results[0])
+            print(f"Total search results: {total}, Downloading...")
             self.download_pdfs(results)
             print("Finished downloading.")
         else:
@@ -143,7 +144,7 @@ class Downloader(BotManager):
     "--start",
     default=2019,
     help="Start Year.",
-    prompt="Input start year number, default is 2019.",
+    prompt="Input start year number, default is 2021.",
 )
 @click.option(
     "--end", default=2022, help="End Year.", prompt="Input end year, default is 2022."
@@ -167,7 +168,7 @@ class Downloader(BotManager):
     help="https://link.springer.com/search?date-facet-mode=between&query=recycling&facet-end-year=%7Bend_year%7D&facet-language=%22En%22&facet-start-year=%7Bstart_year%7D",
 )
 @click.option(
-    "--query", default="catalyst", help="Query to download", prompt="Insert query"
+    "--query", default="Epoxide resin manufacturing process", help="Query to download", prompt="Insert query"
 )
 def main(start, end, start_page, end_page, query, discipline):
     try:
