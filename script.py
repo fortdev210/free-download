@@ -1,10 +1,11 @@
 import click
 import os
 import re
-
+from googletrans import Translator
 from base import BotManager
 from settings import SPRINGER_LINK, SCI_HUB_LINK, ARTICLE_LINK
 
+translator = Translator()
 
 class Downloader(BotManager):
     def __init__(self, **kwargs):
@@ -102,7 +103,7 @@ class Downloader(BotManager):
                 """
                 doi = self.page.evaluate(content)
                 self.go_to_link(SCI_HUB_LINK)
-                self.wait_element_loading('[type="textbox"]')
+                self.wait_element_loading('[type="textbox"]', 30000)
                 self.insert_value('[type="textbox"]', doi)
                 self.sleep(1)
                 self.hit_enter()
@@ -117,7 +118,8 @@ class Downloader(BotManager):
                     self.page.evaluate(content)
                 download = download_info.value
                 title = re.sub('[^A-Za-z0-9]+',' ', title)
-                filename = title + '.pdf'
+                translated = translator.translate(title, dest='ko')
+                filename = translated.text + '.pdf'
                 download.save_as(filename)
                 os.replace(os.path.join(os.getcwd(), filename),self.discipline + "/" + self.query + "/" + filename)
                 self.page.close()
@@ -142,7 +144,7 @@ class Downloader(BotManager):
 @click.command()
 @click.option(
     "--start",
-    default=2019,
+    default=2021,
     help="Start Year.",
     prompt="Input start year number, default is 2021.",
 )
@@ -157,18 +159,18 @@ class Downloader(BotManager):
 )
 @click.option(
     "--end_page",
-    default=3,
+    default=10,
     help="End page to download",
-    prompt="Input end page number, default is 3.",
+    prompt="Input end page number, default is 10.",
 )
 @click.option(
     "--discipline",
-    default="Chemistry",
+    default="Engineering",
     prompt="Input discipline, default is Environment",
     help="https://link.springer.com/search?date-facet-mode=between&query=recycling&facet-end-year=%7Bend_year%7D&facet-language=%22En%22&facet-start-year=%7Bstart_year%7D",
 )
 @click.option(
-    "--query", default="Epoxide resin manufacturing process", help="Query to download", prompt="Insert query"
+    "--query", default="deep learning", help="Query to download", prompt="Insert query"
 )
 def main(start, end, start_page, end_page, query, discipline):
     try:

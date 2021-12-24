@@ -72,7 +72,7 @@ class BotManager:
             )
         else:
             browser = self.playwright.firefox.launch(
-                headless=True,
+                headless=False,
                 # proxy=self.proxy_data,
                 firefox_user_prefs={
                     "media.peerconnection.enabled": False,
