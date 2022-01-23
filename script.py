@@ -4,6 +4,7 @@ import re
 from googletrans import Translator
 from base import BotManager
 from settings import SPRINGER_LINK, SCI_HUB_LINK, ARTICLE_LINK
+from api import get_proxy_ips
 
 translator = Translator()
 
@@ -17,6 +18,7 @@ class Downloader(BotManager):
         self.page_range = kwargs.get("page_range")
         self.query = kwargs.get("search_key")
         self.discipline = kwargs.get("discipline")
+        self.proxies = kwargs.get("proxies")
 
     def open_springer(self):
         if self.browser is None:
@@ -91,17 +93,19 @@ class Downloader(BotManager):
             title = title_list[i]
             try:
                 self.open_new_page()
+                print("anchor: " + anchor)
                 self.go_to_link(anchor)
                 self.wait_element_loading("text=Cite this article")
                 self.click_element("text=Cite this article")
-                self.wait_element_loading('[data-track-action="view doi"]')
+                self.wait_element_loading('[class="c-bibliographic-information__value"]')
 
                 content = """
                     ()=> {
-                        return document.querySelector('[data-track-action="view doi"]').href
+                        return document.querySelector('[class*="c-bibliographic-information__list-item--doi"]').querySelector('[class="c-bibliographic-information__value"]').innerText
                     }
                 """
                 doi = self.page.evaluate(content)
+                print(doi)
                 self.go_to_link(SCI_HUB_LINK)
                 self.wait_element_loading('[type="textbox"]', 30000)
                 self.insert_value('[type="textbox"]', doi)
@@ -170,7 +174,7 @@ class Downloader(BotManager):
     help="https://link.springer.com/search?date-facet-mode=between&query=recycling&facet-end-year=%7Bend_year%7D&facet-language=%22En%22&facet-start-year=%7Bstart_year%7D",
 )
 @click.option(
-    "--query", default="deep learning", help="Query to download", prompt="Insert query"
+    "--query", default="construct machine", help="Query to download", prompt="Insert query"
 )
 def main(start, end, start_page, end_page, query, discipline):
     try:
@@ -186,6 +190,8 @@ def main(start, end, start_page, end_page, query, discipline):
         search_key=query,
         discipline=discipline,
     )
+    proxies = get_proxy_ips('W', 8889)
+    print(proxies)
     bot.run()
 
 
