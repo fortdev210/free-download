@@ -174,7 +174,7 @@ class Downloader(BotManager):
     help="https://link.springer.com/search?date-facet-mode=between&query=recycling&facet-end-year=%7Bend_year%7D&facet-language=%22En%22&facet-start-year=%7Bstart_year%7D",
 )
 @click.option(
-    "--query", default="construct machine", help="Query to download", prompt="Insert query"
+    "--query", default="agriculture machine", help="Query to download", prompt="Insert query"
 )
 def main(start, end, start_page, end_page, query, discipline):
     try:
@@ -190,8 +190,6 @@ def main(start, end, start_page, end_page, query, discipline):
         search_key=query,
         discipline=discipline,
     )
-    proxies = get_proxy_ips('W', 8889)
-    print(proxies)
     bot.run()
 
 
